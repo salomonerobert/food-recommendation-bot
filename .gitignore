@@ -1,0 +1,22 @@
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+
+# Ignore logs and other generated files
+*.log
+*.swp
+*.swo
+
+# Ignore local development configuration files
+.env
+config/local.json
+
+# Ignore build artifacts and compiled binaries
+build/
+dist/
+*.exe
+*.dll
+
+# Ignore dependencies installed with pip or npm
+venv/
+env/
