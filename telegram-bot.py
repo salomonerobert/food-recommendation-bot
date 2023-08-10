@@ -190,7 +190,7 @@ def handle_provided_url(message):
                 hydrated_location.rating = location_details.get('rating')
         
         #save location recommended by user to DB
-        saved_to_db = mongoDBService.save_location(hydrated_location)
+        saved_to_db = mongoDBService.save_user_recommended_location(hydrated_location)
         if saved_to_db:
             print(f'new location saved to db successfully: {hydrated_location.name} {hydrated_location.address}')
 
@@ -203,7 +203,7 @@ def handle_provided_url(message):
         itembtn1 = types.KeyboardButton('Show me good food around me!')
         itembtn2 = types.KeyboardButton('Recommend a makan spot!')
         markup.add(itembtn1, itembtn2)
-        bot.send_message(message.chat.id, f"Congratulations! You've been given **{credits_to_be_added} credits** 🎉 Thank you for your recommendation! Other users like yourself will benefit from this greatly 😊", reply_markup=markup)
+        bot.send_message(message.chat.id, f"<b>Congratulations!</b> You've been given <b>{credits_to_be_added} credits</b> 🎉 Thank you for your recommendation! Other users like yourself will benefit from this greatly 😊", parse_mode='HTML', reply_markup=markup)
         bot.send_message(message.chat.id, "What would you like to do next?", reply_markup=markup)
 
     except Exception as e:

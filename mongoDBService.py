@@ -199,6 +199,7 @@ def save_user_recommended_location(location):
             )
         else:
             # If not found, insert the new document
+            location_data["community_recommendations"] = 1
             locations_collection.insert_one(location_data)
     except pymongo.errors.PyMongoError as e:
         print(f'An error occurred while saving user recommended location for: longitude {location.longitude}: latitude {location.latitude} - Error: {e}')
