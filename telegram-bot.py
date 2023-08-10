@@ -1,133 +1,214 @@
-from audioop import add
-from distutils.command.clean import clean
 import os
-import pymongo
 from telebot import TeleBot, types
 import telebot
-from datetime import datetime
-import datetime as dt
-import re
-import json
-import requests
 from flask import Flask
-from pymongo import MongoClient
-from cryptography.fernet import Fernet
-from bson.objectid import ObjectId
-import CategoryAndFilter as ct
-import Heapsort
-import math
+import mapsAPIService
+import mongoDBService
+import re
+import mapsPreviewService
+import random
 
 server = Flask(__name__)
-API_KEY = os.getenv('API_KEY')
+TELEGRAM_BOT_API_KEY = os.getenv('TELEGRAM_BOT_API_KEY')
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 
-bot = TeleBot(API_KEY)
+bot = TeleBot(TELEGRAM_BOT_API_KEY)
+google_maps_service = mapsAPIService.GoogleMapsAPIService(GOOGLE_MAPS_API_KEY)
 
 user_data = {}
-
-dir="singaporeFnBAll_final2.json"
-f=open(dir,encoding='utf-8')
-data=json.load(f)
 
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=1)
     itembtn1 = types.KeyboardButton('Show me good food around me!')
-    itembtn2 = types.KeyboardButton('Customise my preference!')
+    itembtn2 = types.KeyboardButton('Recommend a makan spot!')
     markup.add(itembtn1, itembtn2)
-    bot.send_message(message.chat.id, "Hola {}! I'm Makan Bot! If you need to find yummy food spots within Singapore, I'm here to help!! 😋  Select from one of the two options below to get started!".format(message.chat.first_name), reply_markup=markup)
+    bot.send_message(message.chat.id, "Hola {}! I'm Makan Bot! If you're in Singapore and you need to find yummy food spots near you, I'm here to help!! 😋  Click the button below to get started!".format(message.chat.first_name), reply_markup=markup)
+    user = mongoDBService.get_user(message.chat.id)
+    if not user:
+        user = mongoDBService.User(
+            name=message.chat.first_name,
+            chat_id=message.chat.id,
+        )
+        mongoDBService.create_new_user(user)
+        user_data[message.chat.id] = user
+
+def userHasSufficientCredits(user):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    if user.remaining_credits < 1:
+        itembtn1 = types.KeyboardButton('Recommend a makan spot!')
+        markup.add(itembtn1)
+        bot.send_message(user.chat_id, "Sorry! You've run out of credits, please add a recommendation to get more free credits. We rely on user inputs of good food places to eat to improve our user experience. Your contributions will greatly help other makan bot users like yourself 😊", reply_markup=markup)
+        return False
+    return True
 
 @bot.message_handler(func=lambda message: message.text == "Show me good food around me!")
 def getLocation(message):
+    user = user_data.get(message.chat.id) or mongoDBService.get_user(message.chat.id)
+    sufficientCredits = userHasSufficientCredits(user)
+    if not sufficientCredits:
+        return
     keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     location_button = telebot.types.KeyboardButton(text="Send Location", request_location=True)
     keyboard.add(location_button)
-    bot.send_message(message.chat.id, "To get started, please press the button below to send your location.", reply_markup=keyboard)
+    bot.send_message(message.chat.id, "Please send your location so that I can recommend some food spots near you.", reply_markup=keyboard)
 
-def formatMsg(idx:int, item:dict):
-    shopName = item['name']
-    price = item['display_price']
-    address = item['address']
-    distance = int(item['distance'])
-    recommendationScore = int(item['recommendation'])
-    modified_price = len(price)*'💰'
+def formatMsg(location):
+    shopName = location.name
+    address = location.address
+    rating = location.rating
+    thumbnail = location.thumbnail if location.thumbnail else None
+    visual_rating = round(rating)*'⭐️'
+    google_maps_url = location.google_maps_link
+    community_ratings = location.community_recommendations
 
-    return """{0}) ⁣⁣
-Name: {1} ⁣
-Price: {2} ⁣⁣
-Address: {3} ⁣
-Distance: {4} metres ⁣
-Recommendation Score: {5} ⁣
-    """.format(idx+1,shopName, modified_price, address, distance, recommendationScore)
+    output = """
+Name: {0} ⁣
+Rating: {1} {4} ⁣⁣
+Address: {2} ⁣
+Google Maps URL: {3} ⁣
+    """.format(shopName, rating, address, google_maps_url, visual_rating)
 
-def checkIfEndOfResults(message):
-    user_id = message.chat.id
-    if user_data[user_id]['curr_index'] == len(user_data[user_id])-1:
-        markup = types.ReplyKeyboardMarkup(row_width=1)
-        itembtn1 = types.KeyboardButton('Show me good food around me!')
-        itembtn2 = types.KeyboardButton('Customise my preference!')
-        markup.add(itembtn1, itembtn2)
-        bot.send_message(message.chat.id, "That's all the results we have at this time! You can change your search criteria to get different results!", reply_markup=markup)
-    else:
-        keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        btn1 = telebot.types.KeyboardButton('Show me more results')
-        keyboard.add(btn1)
-        bot.send_message(message.chat.id, "What would you like to do next?", reply_markup=keyboard)
+    if community_ratings > 0:
+        output += """ ⁣⁣
+Recommended by Makan Bot Users! ✅
+    """
 
-def sendResults(top_fifteen, user_id, message):
-    for idx, item in enumerate(top_fifteen[user_data[user_id]['curr_index']: min(user_data[user_id]['curr_index']+5, len(user_data[user_id]))]):
-        bot.send_message(message.chat.id, formatMsg(idx, item))
+    if thumbnail:
+        output += """ ⁣⁣
+Thumbnail: {0}
+    """.format(thumbnail)
+
+    return output
+
+@bot.message_handler(func=lambda message: message.text == 'Recommend a makan spot!')
+def request_url(message):
+    chat_id = message.chat.id
+    reply_markup = telebot.types.ReplyKeyboardRemove()
+    message = """
+Please send the Google Maps in link in one of the below formats:
+1. https://maps.app.goo.gl/<location_specific_url_extension>
+2. https://goo.gl/maps/<location_specific_place_id>
+If you hit the "Share" button on Google maps and copy the URL it should appear in one of the above formats by default :)
+"""
+    bot.send_message(chat_id, message, reply_markup=reply_markup)
 
 @bot.message_handler(content_types=['location'])
 def handle_location(message):
+    user = user_data.get(message.chat.id) or mongoDBService.get_user(message.chat.id)
+    if not userHasSufficientCredits(user):
+        return
     user_id = message.chat.id
+    bot.send_chat_action(user_id, 'typing')
     latitude = message.location.latitude
     longitude = message.location.longitude
+    is_result_from_db = False
 
-    clean_data = ct.simplifyData(data, [latitude, longitude], 1, 1, 1)
-    sorted_data = Heapsort.getItemsByField(clean_data, "recommendation", False)
-    top_fifteen = sorted_data.getNextN(15)
-    user_data[user_id] = {}
-    user_data[user_id]['sorted_data'] = top_fifteen
-    user_data[user_id]['curr_index'] = 0
-    user_data[user_id]['selected_preferences'] = []
+    locations = mongoDBService.fetch_nearby_locations_sorted_by_reviews(longitude, latitude)
 
-    bot.send_message(message.chat.id, "Thanks for sending your location! Your coordinates are: {} latitude, {} longitude.".format(latitude, longitude))
-    sendResults(top_fifteen, user_id, message)
+    if len(locations) < 8:
+        locations = google_maps_service.fetch_nearby_food_places(longitude, latitude)
+    else:
+        is_result_from_db = True
     
-    user_data[user_id]['curr_index'] = min(user_data[user_id]['curr_index']+5, len(user_data[user_id])-1)
-    checkIfEndOfResults(message)
+    locations = sorted(locations, key=lambda x: x.rating, reverse=True)
 
-@bot.message_handler(func=lambda message: message.text == "Show me more results")
-def showMoreResults(message):
-    user_id = message.chat.id
-    top_fifteen = user_data[user_id]['sorted_data']
-    curr_index = user_data[user_id]['curr_index']
+    count = 0
 
-    sendResults(top_fifteen, user_id, message)
-    user_data[user_id]['curr_index'] = min(user_data[user_id]['curr_index']+5, len(user_data[user_id])-1)
-    checkIfEndOfResults(message)
+    while count < len(locations) and count < 4:
+        bot.send_message(user_id, formatMsg(locations[count]))
+        count += 1
+    
+    mongoDBService.update_user_credits(user_id, 1)
+    user.remaining_credits += 1
+    user_data[message.chat.id] = user
 
-@bot.message_handler(func=lambda message: message.text == "Customise my preference!")
-def collectPreferences(message):
-    inline_keyboard = telebot.types.InlineKeyboardMarkup()
-    button1 = telebot.types.InlineKeyboardButton(text="Price", callback_data="price")
-    button2 = telebot.types.InlineKeyboardButton(text="Distance", callback_data="distance")
-    button3 = telebot.types.InlineKeyboardButton(text="Ratings", callback_data="ratings")
-    inline_keyboard.add(button1, button2, button3)
-    bot.send_message(message.chat.id, "Hi there! Please rank the following options in order of preference:", reply_markup=inline_keyboard)
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    itembtn1 = types.KeyboardButton('Show me good food around me!')
+    itembtn2 = types.KeyboardButton('Recommend a makan spot!')
+    markup.add(itembtn1, itembtn2)
+    bot.send_message(user_id, "What would you like to do next?", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda query: query.data in ["price", "distance", "ratings"])
-def handle_ranking(query):
-    user_id = query.from_user.id
-    ranking = query.data
-    bot.send_chat_action(user_id, "typing")
+    if not is_result_from_db:
+        mongoDBService.save_locations(locations)
+    
+    return
 
-    if user_id not in user_data.keys():
-        user_data[user_id]['selected_preferences'] = []
+def find_urls(text):
+    pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    return len(re.findall(pattern, text)) > 0
 
-    user_data[user_id]['selected_preferences'].append(ranking)
+def contains_google_maps_url(text):
+    # Regular expression pattern to match Google Maps URLs
+    pattern = r'https://(goo\.gl/maps/|maps\.app\.goo\.gl/)[a-zA-Z0-9?=_&]+'
+    return re.search(pattern, text) is not None
 
-    bot.send_message(user_id, "Thanks for ranking! Your current order of preference is: {}".format(", ".join(user_data[user_id]['selected_preferences'])))
+def compute_credits(chat_id):
+    user = user_data.get(chat_id) or mongoDBService.get_user(chat_id)
+    if user.contributions <= 3:
+        return 5
+    else:
+        return random.randint(1, 8)
+
+@bot.message_handler(func=lambda message: contains_google_maps_url(message.text) or find_urls(message.text))
+def handle_provided_url(message):
+    
+    chat_id = message.chat.id
+    bot.send_chat_action(chat_id, 'typing')
+
+    def handleIncorrectURL():
+            bot.send_message(chat_id, 'Oops, there was an issue with the URL you shared, please double check your URL')
+    
+    google_maps_url_present = contains_google_maps_url(message.text)
+    if not google_maps_url_present:
+        bot.send_message(chat_id, "Uhoh, invalid URL sent, please check and send a valid URL in the format specified above")
+        return
+
+    url_format = mapsPreviewService.distinguish_google_maps_url_format(message.text)
+    location_details = None
+
+    try:
+        if url_format == 'Long Format':
+            location_details = mapsPreviewService.get_google_maps_details_for_long_format(message.text)
+        elif url_format == 'Short Format':
+            location_details = mapsPreviewService.get_google_maps_details_for_short_format(message.text)
+        else:
+            handleIncorrectURL()
+            return
+
+        if not (location_details.get('name') or location_details.get('address')):
+            handleIncorrectURL()
+            return
+
+        #make API call to Google Maps to get place details that could not be found from website preview
+        get_rating_flag = False if location_details.get('rating') else True
+        hydrated_location = google_maps_service.fetch_place_details(location_details.get("name"), location_details.get("address"), get_rating_flag)
+        if hydrated_location:
+            hydrated_location.google_maps_link = message.text
+            hydrated_location.thumbnail = location_details.get('thumbnail')
+            if not get_rating_flag:
+                hydrated_location.rating = location_details.get('rating')
+        
+        #save location recommended by user to DB
+        saved_to_db = mongoDBService.save_location(hydrated_location)
+        if saved_to_db:
+            print(f'new location saved to db successfully: {hydrated_location.name} {hydrated_location.address}')
+
+        #update user's credits and contributions on DB
+        credits_to_be_added = compute_credits(chat_id)
+        mongoDBService.update_user_credits(chat_id, credits_to_be_added, False)
+        mongoDBService.update_user_contributions(chat_id, 1)
+
+        markup = types.ReplyKeyboardMarkup(row_width=1)
+        itembtn1 = types.KeyboardButton('Show me good food around me!')
+        itembtn2 = types.KeyboardButton('Recommend a makan spot!')
+        markup.add(itembtn1, itembtn2)
+        bot.send_message(message.chat.id, f"Congratulations! You've been given **{credits_to_be_added} credits** 🎉 Thank you for your recommendation! Other users like yourself will benefit from this greatly 😊", reply_markup=markup)
+        bot.send_message(message.chat.id, "What would you like to do next?", reply_markup=markup)
+
+    except Exception as e:
+        print(f'Error while processing user-provided URL: {e}')
+
 
 
 # @server.route('/' + API_KEY, methods=['POST'])
@@ -138,7 +219,7 @@ def handle_ranking(query):
 # @server.route("/")
 # def webhook():
 #     bot.remove_webhook()
-#     bot.set_webhook(url="https://bft-telegram-bot.herokuapp.com/"+API_KEY)
+#     bot.set_webhook(url="https://sg-makan-bot.herokuapp.com/"+API_KEY)
 #     return "!", 200
 
 # if __name__ == "__main__":
