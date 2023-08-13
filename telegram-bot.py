@@ -17,6 +17,8 @@ google_maps_service = mapsAPIService.GoogleMapsAPIService(GOOGLE_MAPS_API_KEY)
 
 user_data = {}
 
+print('executed start')
+
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=1)
@@ -187,7 +189,11 @@ def handle_provided_url(message):
             hydrated_location.google_maps_link = message.text
             hydrated_location.thumbnail = location_details.get('thumbnail')
             if not get_rating_flag:
-                hydrated_location.rating = location_details.get('rating')
+                rating = location_details.get('rating')
+                if isinstance(rating, str):
+                    hydrated_location.rating = float(rating.strip())
+                else:
+                    hydrated_location.rating = rating
         
         #save location recommended by user to DB
         saved_to_db = mongoDBService.save_user_recommended_location(hydrated_location)
@@ -209,7 +215,7 @@ def handle_provided_url(message):
     except Exception as e:
         print(f'Error while processing user-provided URL: {e}')
 
-
+print('executed end')
 
 # @server.route('/' + API_KEY, methods=['POST'])
 # def getMessage():
