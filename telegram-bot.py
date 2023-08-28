@@ -17,8 +17,6 @@ google_maps_service = mapsAPIService.GoogleMapsAPIService(GOOGLE_MAPS_API_KEY)
 
 user_data = {}
 
-print('executed start')
-
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=1)
@@ -75,11 +73,6 @@ Google Maps URL: {3} ⁣
         output += """ ⁣⁣
 Recommended by Makan Bot Users! ✅
     """
-
-    if thumbnail:
-        output += """ ⁣⁣
-Thumbnail: {0}
-    """.format(thumbnail)
 
     return output
 
@@ -214,8 +207,6 @@ def handle_provided_url(message):
 
     except Exception as e:
         print(f'Error while processing user-provided URL: {e}')
-
-print('executed end')
 
 # @server.route('/' + API_KEY, methods=['POST'])
 # def getMessage():
