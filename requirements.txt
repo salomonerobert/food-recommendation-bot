@@ -18,5 +18,5 @@ requests==2.31.0
 soupsieve==2.4.1
 telebot==0.0.5
 urllib3==2.0.4
-Werkzeug==2.3.7
+Werkzeug==2.2.3
 zipp==3.16.2
