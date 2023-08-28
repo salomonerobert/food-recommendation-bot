@@ -24,7 +24,7 @@ The Food Recommendation bot leverages the power of the Google Maps API to find t
 
 1. **Starting the Bot:** Use the '/start' command to initiate the bot. You'll be greeted with options to either show food around you or recommend a spot.
 2. **Finding Food:** Click 'Show me good food around me!' and send your location. The bot will then provide details of the best places nearby.
-3. **Recommending a Spot:** Click 'Recommend a makan spot!' and follow the instructions to share your favorite places.
+3. **Recommending a Spot:** Click 'I want to recommend a makan spot!' and follow the instructions to share your favorite places.
 4. **Credits System:** Users have credits that are used for obtaining recommendations. More credits can be earned by contributing recommendations.
 5. **Database Integration:** The bot uses MongoDB to store user information and community recommendations, enhancing its capabilities over time.
 

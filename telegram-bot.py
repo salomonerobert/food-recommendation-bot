@@ -21,9 +21,10 @@ user_data = {}
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=1)
     itembtn1 = types.KeyboardButton('Show me good food around me!')
-    itembtn2 = types.KeyboardButton('Recommend a makan spot!')
+    itembtn2 = types.KeyboardButton('I want to recommend a makan spot!')
     markup.add(itembtn1, itembtn2)
-    bot.send_message(message.chat.id, "Hola {}! I'm Makan Bot! If you're in Singapore and you need to find yummy food spots near you, I'm here to help!! 😋  Click the button below to get started!".format(message.chat.first_name), reply_markup=markup)
+    bot.send_message(message.chat.id, "Hola {}! I'm Makan Bot! If you're in Singapore and you need to find yummy food spots near you, I'm here to help!! 😋 Click the button below to get started!".format(message.chat.first_name), reply_markup=markup)
+    bot.send_message(message.chat.id, "Help me build a foodie community by contributing your food recommendations so that I can share good makan places to others like you! Hit /info to find out more about how you can contribute your recommendations!", reply_markup=markup)
     user = mongoDBService.get_user(message.chat.id)
     if not user:
         user = mongoDBService.User(
@@ -33,10 +34,30 @@ def start(message):
         mongoDBService.create_new_user(user)
         user_data[message.chat.id] = user
 
+@bot.message_handler(commands=['info'])
+def start(message):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    itembtn1 = types.KeyboardButton('Show me good food around me!')
+    itembtn2 = types.KeyboardButton('I want to recommend a makan spot!')
+    markup.add(itembtn1, itembtn2)
+    info_message = """
+<b>Here is a quick summary of all the things you can do with Makan Bot ✅</b> ⁣
+ ⁣
+1️⃣ <b>Find good food places near you to eat 🍜</b> - feeling hungry and not sure what’s good around you? Simply ask makan bot and it will send you some recommendations based on highly rated food places on Google maps and recommendations from other makan bot users! ⁣
+2️⃣ <b>Contribute your recommended makan spots 💯</b> - you can add to makan bot’s database by suggestions some of your favorite places by sharing the google maps link to makan bot. You can share suggestions of food places anywhere in Singapore! Makan will then use your suggestions while recommending food places to others at a later date. You will also be rewarded with up to 10 credits for each contribution you make! 🤩 ⁣
+ ⁣
+<b>How does makan bot work?</b> ⁣
+1️⃣ Makan bot uses Google Maps API to find the best rated food places near you to suggest to you! It will also use other user recommendations to suggest places that have been tried and tested by other makan bot users like yourself! ⁣
+2️⃣ Makan bot is <b>free to use</b> but in order to encourage user contributions of food places, a credit system is in effect. You are given <b>5 credits</b> upon joining and each time you search for food places near you, you will use <b>1 credit</b>. To get more credits for free, simply recommend any good food spot you know and you will <b>get up to 10 credits for each contribution</b>! 😊⁣ ⁣
+ ⁣
+Don't forget to have fun! 🎉
+"""
+    bot.send_message(message.chat.id, info_message , parse_mode='HTML', reply_markup=markup)
+
 def userHasSufficientCredits(user):
     markup = types.ReplyKeyboardMarkup(row_width=1)
     if user.remaining_credits < 1:
-        itembtn1 = types.KeyboardButton('Recommend a makan spot!')
+        itembtn1 = types.KeyboardButton('I want to recommend a makan spot!')
         markup.add(itembtn1)
         bot.send_message(user.chat_id, "Sorry! You've run out of credits, please add a recommendation to get more free credits. We rely on user inputs of good food places to eat to improve our user experience. Your contributions will greatly help other makan bot users like yourself 😊", reply_markup=markup)
         return False
@@ -76,7 +97,7 @@ Recommended by Makan Bot Users! ✅
 
     return output
 
-@bot.message_handler(func=lambda message: message.text == 'Recommend a makan spot!')
+@bot.message_handler(func=lambda message: message.text == 'I want to recommend a makan spot!')
 def request_url(message):
     chat_id = message.chat.id
     reply_markup = telebot.types.ReplyKeyboardRemove()
@@ -120,7 +141,7 @@ def handle_location(message):
 
     markup = types.ReplyKeyboardMarkup(row_width=1)
     itembtn1 = types.KeyboardButton('Show me good food around me!')
-    itembtn2 = types.KeyboardButton('Recommend a makan spot!')
+    itembtn2 = types.KeyboardButton('I want to recommend a makan spot!')
     markup.add(itembtn1, itembtn2)
     bot.send_message(user_id, "What would you like to do next?", reply_markup=markup)
 
@@ -200,7 +221,7 @@ def handle_provided_url(message):
 
         markup = types.ReplyKeyboardMarkup(row_width=1)
         itembtn1 = types.KeyboardButton('Show me good food around me!')
-        itembtn2 = types.KeyboardButton('Recommend a makan spot!')
+        itembtn2 = types.KeyboardButton('I want to recommend a makan spot!')
         markup.add(itembtn1, itembtn2)
         bot.send_message(message.chat.id, f"<b>Congratulations!</b> You've been given <b>{credits_to_be_added} credits</b> 🎉 Thank you for your recommendation! Other users like yourself will benefit from this greatly 😊", parse_mode='HTML', reply_markup=markup)
         bot.send_message(message.chat.id, "What would you like to do next?", reply_markup=markup)
