@@ -1,7 +1,7 @@
 import os
 from telebot import TeleBot, types
 import telebot
-from flask import Flask
+from flask import Flask, request
 import mapsAPIService
 import mongoDBService
 import re
@@ -208,20 +208,20 @@ def handle_provided_url(message):
     except Exception as e:
         print(f'Error while processing user-provided URL: {e}')
 
-# @server.route('/' + API_KEY, methods=['POST'])
-# def getMessage():
-#     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-#     return "!", 200
+@server.route('/' + TELEGRAM_BOT_API_KEY, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
 
-# @server.route("/")
-# def webhook():
-#     bot.remove_webhook()
-#     bot.set_webhook(url="https://sg-makan-bot.herokuapp.com/"+API_KEY)
-#     return "!", 200
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url="https://sg-makan-bot.onrender.com/"+TELEGRAM_BOT_API_KEY)
+    return "!", 200
 
-# if __name__ == "__main__":
-#     server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 #code for local testing
-bot.remove_webhook()
-bot.polling()
+# bot.remove_webhook()
+# bot.polling()
