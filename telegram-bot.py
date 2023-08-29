@@ -44,15 +44,27 @@ def start(message):
 <b>Here is a quick summary of all the things you can do with Makan Bot ✅</b> ⁣
  ⁣
 1️⃣ <b>Find good food places near you to eat 🍜</b> - feeling hungry and not sure what’s good around you? Simply ask makan bot and it will send you some recommendations based on highly rated food places on Google maps and recommendations from other makan bot users! ⁣
-2️⃣ <b>Contribute your recommended makan spots 💯</b> - you can add to makan bot’s database by suggestions some of your favorite places by sharing the google maps link to makan bot. You can share suggestions of food places anywhere in Singapore! Makan will then use your suggestions while recommending food places to others at a later date. You will also be rewarded with up to 10 credits for each contribution you make! 🤩 ⁣
+2️⃣ <b>Contribute your recommended makan spots 💯</b> - you can add to makan bot’s database by suggestions some of your favorite places by sharing the google maps link to makan bot. You can share suggestions of food places anywhere in Singapore! Makan will then use your suggestions while recommending food places to others at a later date. You will also be rewarded with <b>up to 8 credits</b> for each contribution you make! 🤩 ⁣
  ⁣
 <b>How does makan bot work?</b> ⁣
 1️⃣ Makan bot uses Google Maps API to find the best rated food places near you to suggest to you! It will also use other user recommendations to suggest places that have been tried and tested by other makan bot users like yourself! ⁣
-2️⃣ Makan bot is <b>free to use</b> but in order to encourage user contributions of food places, a credit system is in effect. You are given <b>5 credits</b> upon joining and each time you search for food places near you, you will use <b>1 credit</b>. To get more credits for free, simply recommend any good food spot you know and you will <b>get up to 10 credits for each contribution</b>! 😊⁣ ⁣
+2️⃣ Makan bot is <b>free to use</b> but in order to encourage user contributions of food places, a credit system is in effect. You are given <b>5 credits</b> upon joining and each time you search for food places near you, you will use <b>1 credit</b>. To get more credits for free, simply recommend any good food spot you know and you will <b>get up to 8 credits for each contribution</b>! 😊⁣ ⁣
  ⁣
 Don't forget to have fun! 🎉
 """
     bot.send_message(message.chat.id, info_message , parse_mode='HTML', reply_markup=markup)
+
+@bot.message_handler(commands=['check-credits'])
+def start(message):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    itembtn1 = types.KeyboardButton('Show me good food around me!')
+    itembtn2 = types.KeyboardButton('I want to recommend a makan spot!')
+    markup.add(itembtn1, itembtn2)
+
+    user = mongoDBService.get_user(message.chat.id)
+
+    bot.send_message(message.chat.id, "You have <b>{} credits</b> left! Get more free credits by recommending your favorite makan spots to Makan Bot! 😋".format(user.remaining_credits), parse_mode='HTML', reply_markup=markup)
+    bot.send_message(message.chat.id, "What would you like to do next?", reply_markup=markup)
 
 def userHasSufficientCredits(user):
     markup = types.ReplyKeyboardMarkup(row_width=1)
