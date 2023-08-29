@@ -54,7 +54,7 @@ Don't forget to have fun! 🎉
 """
     bot.send_message(message.chat.id, info_message , parse_mode='HTML', reply_markup=markup)
 
-@bot.message_handler(commands=['check-credits'])
+@bot.message_handler(commands=['checkcredits'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(row_width=1)
     itembtn1 = types.KeyboardButton('Show me good food around me!')
