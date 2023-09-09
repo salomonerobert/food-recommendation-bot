@@ -1,0 +1,40 @@
+name: Deployment
+
+# on commit push, run job
+on: [push]
+
+jobs:
+  run:
+    # worker runs on latest ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    # checkout to our repository so we have access to the source code
+    - uses: actions/checkout@v2
+    
+    # the actual deployment to google
+    - name: Cloud Functions Deploy
+      uses: google-github-actions/deploy-cloud-functions@v0.1.2
+      with:
+        credentials: ${{ secrets.GCP_SA_KEY }}
+        name: python-hello-world-cf
+        description: SG-makan-bot # nullable
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        region: asia-southeast1
+        source_dir: .
+        # name of our function in our main.py file, defaults to the resource name suffix 
+        entry_point: telegram-bot.process_update
+        # runtime to use for the function
+        runtime: python38
+        # the function execution timeout
+        timeout: 60
+        # the maximum number of instances for the function.
+        max_instances: 50
+        # optional configs, see google-cloud-actions/deploy-cloud-functions for full reference
+        # list of key-value pairs to set as environment variables in the form KEY1=VALUE1,KEY2=VALUE2.
+        env_vars: |
+            TELEGRAM_BOT_API_KEY=5783945347:AAHx-bmBipoRpR-mLz5laSVTIFfxeSdemvI
+            MONGO_PW=4hGqIu25GHDn3yH5
+            MONGO_USERNAME=darsalomone
+            MONGO_URL=sg-makan-bot.or3sgsh.mongodb.net
+            GOOGLE_MAPS_API_KEY=AIzaSyBpCRvJaVJQ6aYc2SHXk06ytJUwvimXRZw
