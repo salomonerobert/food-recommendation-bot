@@ -33,8 +33,4 @@ jobs:
         # optional configs, see google-cloud-actions/deploy-cloud-functions for full reference
         # list of key-value pairs to set as environment variables in the form KEY1=VALUE1,KEY2=VALUE2.
         env_vars: |
-            TELEGRAM_BOT_API_KEY=5783945347:AAHx-bmBipoRpR-mLz5laSVTIFfxeSdemvI
-            MONGO_PW=4hGqIu25GHDn3yH5
-            MONGO_USERNAME=darsalomone
-            MONGO_URL=sg-makan-bot.or3sgsh.mongodb.net
-            GOOGLE_MAPS_API_KEY=AIzaSyBpCRvJaVJQ6aYc2SHXk06ytJUwvimXRZw
+          
