@@ -21,7 +21,6 @@ jobs:
         description: SG-makan-bot # nullable
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         region: asia-southeast1
-        source_dir: .
         # name of our function in our main.py file, defaults to the resource name suffix 
         entry_point: process_update
         # runtime to use for the function
