@@ -23,7 +23,7 @@ jobs:
         region: asia-southeast1
         source_dir: .
         # name of our function in our main.py file, defaults to the resource name suffix 
-        entry_point: telegram-bot.process_update
+        entry_point: process_update
         # runtime to use for the function
         runtime: python38
         # the function execution timeout
