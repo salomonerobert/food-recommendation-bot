@@ -241,20 +241,19 @@ def handle_provided_url(message):
     except Exception as e:
         print(f'Error while processing user-provided URL: {e}')
 
-# Process Telegram updates
-def process_update(request):
-    if request.method == 'POST':
-        update = types.Update.de_json(request.get_json(force=True, cache=False))
-        bot.process_new_updates([update])
-        return 'OK', 200
-    else:
-        return 'This endpoint is for Telegram Webhook only.', 403
+@server.route('/' + TELEGRAM_BOT_API_KEY, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
 
-# Set Webhook
-def set_webhook(request):
+@server.route("/")
+def webhook():
     bot.remove_webhook()
-    bot.set_webhook(url=f"https://asia-southeast1-brilliant-lens-353909.cloudfunctions.net/process_update")
-    return 'Webhook set', 200
+    bot.set_webhook(url="https://sg-makan-bot.onrender.com/"+TELEGRAM_BOT_API_KEY)
+    return "!", 200
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
 #code for local testing
 # bot.remove_webhook()
