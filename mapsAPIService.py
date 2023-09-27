@@ -1,5 +1,8 @@
 import requests
 import mongoDBService
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 class GoogleMapsAPIService:
     def __init__(self, api_key):
@@ -10,6 +13,7 @@ class GoogleMapsAPIService:
 
     def fetch_place_details(self, name, address, get_rating_flag):
         try:
+            logging.info(f'Fetching place details for {name} and {address}')
             # Construct the query parameters
             params = {
                 "input": f"{name} {address}",
@@ -25,7 +29,7 @@ class GoogleMapsAPIService:
             response = requests.get(self.base_url, params=params)
             response_data = response.json()
 
-            print(response_data)
+            logging.debug(response_data)
 
             if response_data.get("status") == "OK":
                 candidates = response_data.get("candidates", [])
@@ -47,12 +51,13 @@ class GoogleMapsAPIService:
             
             return None
         except requests.exceptions.RequestException as e:
-            print("Error while fetching place details:", e)
+            logging.error("Error while fetching place details:", e)
             return None
 
     
     def fetch_place_details_by_id(self, place_id):
         try: 
+            logging.info(f'Fetching place details by ID for {place_id}')
             # Construct the query parameters for Place Details API
             params = {
                 "place_id": place_id,
@@ -69,11 +74,12 @@ class GoogleMapsAPIService:
             
             return None
         except requests.exceptions.RequestException as e:
-            print("Error while fetching place details by place_id:", e)
+            logging.error("Error while fetching place details by place_id:", e)
             return None
 
     def fetch_nearby_food_places(self, longitude, latitude):
         try:
+            logging.info(f'Fetching nearby places for latitude: {latitude} and longitude: {longitude}')
             # Construct the query parameters for nearby search
             params = {
                 "location": f"{latitude},{longitude}",
@@ -105,7 +111,7 @@ class GoogleMapsAPIService:
             
             return []
         except requests.exceptions.RequestException as e:
-            print("Error while fetching nearby food places:", e)
+            logging.error("Error while fetching nearby food places:", e)
             return None
 
 

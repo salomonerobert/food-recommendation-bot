@@ -1,6 +1,7 @@
 import pymongo
 from datetime import datetime
 import os
+import logging
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,12 +9,14 @@ MONGO_PW = os.environ.get("MONGO_PW")
 MONGO_USER = os.environ.get("MONGO_USERNAME")
 MONGO_URL = os.environ.get("MONGO_URL")
 
+logging.basicConfig(level=logging.DEBUG)
+
 # MongoDB connection string (replace with your actual connection string)
 MONGODB_URI = f"mongodb+srv://{MONGO_USER}:{MONGO_PW}@{MONGO_URL}/?retryWrites=true&w=majority"
 if MONGO_PW and MONGO_URL and MONGO_USER:
-    print('env variables obtained successfully')
+    logging.info('env variables obtained successfully')
 else:
-    print('error obtaining env one or more variables')
+    logging.error('error obtaining env one or more variables')
 
 # Create a MongoDB client
 client = pymongo.MongoClient(MONGODB_URI)
@@ -52,11 +55,11 @@ def update_user_last_used_date(chat_id):
         )
         
         if result.modified_count > 0:
-            print(f'Successfully updated last used date for user with chat_id: {chat_id}')
+            logging.info(f'Successfully updated last used date for user with chat_id: {chat_id}')
         else:
-            print(f'No user found with chat_id: {chat_id}')
+            logging.warn(f'No user found with chat_id: {chat_id}')
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while updating last used date for user with chat_id {chat_id}: {e}')
+        logging.error(f'An error occurred while updating last used date for user with chat_id {chat_id}: {e}')
         
     return
 
@@ -72,11 +75,11 @@ def update_user_credits(chat_id, amount, decrement=True):
         )
         
         if result.modified_count > 0:
-            print(f'Successfully updated remaining credits: {chat_id}')
+            logging.info(f'Successfully updated remaining credits: {chat_id}')
         else:
-            print(f'No user found with chat_id: {chat_id}')
+            logging.warn(f'No user found with chat_id: {chat_id}')
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while updating remaining credits for user with chat_id {chat_id}: {e}')
+        logging.error(f'An error occurred while updating remaining credits for user with chat_id {chat_id}: {e}')
         
     return
 
@@ -92,11 +95,11 @@ def update_user_contributions(chat_id, amount, increment=True):
         )
         
         if result.modified_count > 0:
-            print(f'Successfully updated user contributions: {chat_id}')
+            logging.info(f'Successfully updated user contributions: {chat_id}')
         else:
-            print(f'No user found with chat_id: {chat_id}')
+            logging.warn(f'No user found with chat_id: {chat_id}')
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while updating user contributions for user with chat_id {chat_id}: {e}')
+        logging.error(f'An error occurred while updating user contributions for user with chat_id {chat_id}: {e}')
         
     return
 
@@ -115,7 +118,7 @@ def get_user(chat_id):
             update_user_last_used_date(chat_id)
 
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while getting user with chat_id: {chat_id}: {e}')
+        logging.error(f'An error occurred while getting user with chat_id: {chat_id}: {e}')
     
     return user
 
@@ -160,7 +163,7 @@ def save_location(location):
         else:
             return existing_location
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while saving single location: longitude {location.longitude}: latitude {location.latitude} - Error: {e}')
+        logging.error(f'An error occurred while saving single location: longitude {location.longitude}: latitude {location.latitude} - Error: {e}')
         return None
 
 
@@ -202,7 +205,7 @@ def save_user_recommended_location(location):
             location_data["community_recommendations"] = 1
             locations_collection.insert_one(location_data)
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while saving user recommended location for: longitude {location.longitude}: latitude {location.latitude} - Error: {e}')
+        logging.error(f'An error occurred while saving user recommended location for: longitude {location.longitude}: latitude {location.latitude} - Error: {e}')
 
 def save_locations(locations):
     for location in locations:
@@ -228,7 +231,7 @@ def save_locations(locations):
             if not existing_location:
                 locations_collection.insert_one(location_data)
         except pymongo.errors.PyMongoError as e:
-            print(f"Error while bulk inserting locations: {e}")
+            logging.error(f"Error while bulk inserting locations: {e}")
 
 def map_to_location_object(detailed_place_object):
         coordinates = detailed_place_object.get('location', {}).get('coordinates', [])
@@ -281,5 +284,5 @@ def fetch_nearby_locations_sorted_by_reviews(longitude, latitude):
 
         return output
     except pymongo.errors.PyMongoError as e:
-        print(f'An error occurred while fetching nearby locations sorted by reviews for: longitude {longitude}: latitude {latitude} - Error: {e}')
+        logging.error(f'An error occurred while fetching nearby locations sorted by reviews for: longitude {longitude}: latitude {latitude} - Error: {e}')
         return []

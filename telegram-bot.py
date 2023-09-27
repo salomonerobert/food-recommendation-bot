@@ -7,13 +7,16 @@ import mongoDBService
 import re
 import mapsPreviewService
 import random
+import logging
 
 server = Flask(__name__)
 TELEGRAM_BOT_API_KEY = os.getenv('TELEGRAM_BOT_API_KEY')
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+GCR_PROJECT_URL = os.getenv('GCR_PROJECT_URL')
 
 bot = TeleBot(TELEGRAM_BOT_API_KEY)
 google_maps_service = mapsAPIService.GoogleMapsAPIService(GOOGLE_MAPS_API_KEY)
+logging.basicConfig(level=logging.DEBUG)
 
 user_data = {}
 
@@ -224,7 +227,7 @@ def handle_provided_url(message):
         #save location recommended by user to DB
         saved_to_db = mongoDBService.save_user_recommended_location(hydrated_location)
         if saved_to_db:
-            print(f'new location saved to db successfully: {hydrated_location.name} {hydrated_location.address}')
+            logging.info(f'new location saved to db successfully: {hydrated_location.name} {hydrated_location.address}')
 
         #update user's credits and contributions on DB
         credits_to_be_added = compute_credits(chat_id)
@@ -239,7 +242,7 @@ def handle_provided_url(message):
         bot.send_message(message.chat.id, "What would you like to do next?", reply_markup=markup)
 
     except Exception as e:
-        print(f'Error while processing user-provided URL: {e}')
+        logging.error(f'Error while processing user-provided URL: {e}')
 
 @server.route('/' + TELEGRAM_BOT_API_KEY, methods=['POST'])
 def getMessage():
@@ -249,12 +252,12 @@ def getMessage():
 @server.route("/")
 def webhook():
     bot.remove_webhook()
-    bot.set_webhook(url="https://sg-makan-bot.onrender.com/"+TELEGRAM_BOT_API_KEY)
+    bot.set_webhook(url=GCR_PROJECT_URL+TELEGRAM_BOT_API_KEY)
     return "!", 200
 
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
 
-#code for local testing
+# code for local testing
 # bot.remove_webhook()
 # bot.polling()
