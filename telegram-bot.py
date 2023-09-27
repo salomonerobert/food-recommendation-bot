@@ -201,8 +201,10 @@ def handle_provided_url(message):
     try:
         if url_format == 'Long Format':
             location_details = mapsPreviewService.get_google_maps_details_for_long_format(message.text)
+            logging.info(f'Long Format location details: {location_details}')
         elif url_format == 'Short Format':
             location_details = mapsPreviewService.get_google_maps_details_for_short_format(message.text)
+            logging.info(f'Short Format location details: {location_details}')
         else:
             handleIncorrectURL()
             return

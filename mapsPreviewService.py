@@ -1,5 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 def distinguish_google_maps_url_format(url):
     if "goo.gl/maps" in url:
@@ -11,6 +14,7 @@ def distinguish_google_maps_url_format(url):
 
 def get_google_maps_details_for_long_format(url):
     try:
+        logging.info(f'Getting google maps details for Long Format URL: {url}')
         response = requests.get(url)
         response.raise_for_status()  # Check for any HTTP errors
 
@@ -42,11 +46,12 @@ def get_google_maps_details_for_long_format(url):
         }
 
     except requests.exceptions.RequestException as e:
-        print("Error:", e)
+        logging.error("Error:", e)
         return None
 
 def get_google_maps_details_for_short_format(url):
     try:
+        logging.info(f'Getting google maps details for Short Format URL: {url}')
         response = requests.get(url)
         response.raise_for_status()  # Check for any HTTP errors
 
@@ -81,7 +86,7 @@ def get_google_maps_details_for_short_format(url):
         }
 
     except requests.exceptions.RequestException as e:
-        print("Error:", e)
+        logging.error("Error:", e)
         return None
 
 
