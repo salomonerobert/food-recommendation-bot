@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 server = Flask(__name__)
 TELEGRAM_BOT_API_KEY = os.getenv('TELEGRAM_BOT_API_KEY')
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID')
 
 if GOOGLE_MAPS_API_KEY is not None:
     logging.info(TELEGRAM_BOT_API_KEY)
@@ -80,7 +81,7 @@ def process_update(request):
 # Set Webhook
 def set_webhook(request):
     bot.remove_webhook()
-    bot.set_webhook(url=f"https://asia-southeast1-brilliant-lens-353909.cloudfunctions.net/process_update")
+    bot.set_webhook(url=f"https://{GCP_PROJECT_ID}.cloudfunctions.net/process_update")
     return 'Webhook set', 200
 
 #code for local testing
